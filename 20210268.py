@@ -48,21 +48,23 @@ def main():
     df = pd.read_csv(path)
     df['Gender'] = df['Gender'].map({'Male': 0, 'Female': 1})
     data_percentage = 1
-    df = df.sample(frac=data_percentage)
+    df = df.sample(frac=data_percentage).reset_index(drop=True)
+    customer_ids = df['CustomerID']
+    df = df.drop(columns=['CustomerID'])
     
-    numerical_columns = ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']
-    all_outliers = set()
+    # numerical_columns = ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']
+    # all_outliers = set()
 
-    for col in numerical_columns:
-        outliers = find_outliers_iqr(df, col)
-        print(f"Outliers in {col}: {outliers.index.tolist()}")
-        all_outliers.update(outliers.index.tolist())  
+    # for col in numerical_columns:
+    #     outliers = find_outliers_iqr(df, col)
+    #     print(f"Outliers in {col}: {outliers.index.tolist()}")
+    #     all_outliers.update(outliers.index.tolist())  
 
-    df_clean = df[~df.index.isin(all_outliers)]
+    # df_clean = df[~df.index.isin(all_outliers)]
     
     k = 5
-    centroids_indices = random.sample(range(len(df_clean)), k)
-    centroids = df_clean.iloc[centroids_indices].copy()
+    centroids_indices = random.sample(range(len(df)), k)
+    centroids = df.iloc[centroids_indices].copy()
     clusters = [[] for _ in range(k)]
     
     
@@ -73,16 +75,25 @@ def main():
         is_converged = True
         clusters = [[] for _ in range(k)]
         
-        for i in range(len(df_clean)):
-            row = df_clean.iloc[i]
+        for i in range(len(df)):
+            row = df.iloc[i]
             if assign_to_cluster(row, centroids, clusters, prev_assignments):
                 is_converged = False
         
-        update_centroids(df_clean, clusters, centroids)
+        update_centroids(df, clusters, centroids)
     
     for i in range(len(clusters)):
-        cluster_ids = df_clean.loc[clusters[i], 'CustomerID'].tolist()
+        cluster_ids = customer_ids.loc[clusters[i]].tolist()
         print(f"Cluster {i+1} IDs: {sorted(cluster_ids)}")
+        
+        numeric_columns = ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']
+        cluster = df.loc[clusters[i]]
+        for column in numeric_columns:
+            outliers = find_outliers_iqr(cluster, column)
+            # print(f"Outliers in {column}: {outliers['CustomerID'].tolist()}")
+            print(f"Outliers in {column}: {customer_ids.loc[outliers.index].tolist()}")
+            
+        print()
 
 if __name__ == "__main__":
     main()

@@ -63,6 +63,7 @@ def main():
     # df_clean = df[~df.index.isin(all_outliers)]
     
     k = 5
+    random.seed(42)
     centroids_indices = random.sample(range(len(df)), k)
     centroids = df.iloc[centroids_indices].copy()
     clusters = [[] for _ in range(k)]
